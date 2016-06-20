@@ -28,12 +28,14 @@ namespace Hangfire
         private const int MaxDefaultWorkerCount = 40;
 
         private int _workerCount;
-        private string[] _queues;
+        private Queue[] _queues;
 
         public BackgroundJobServerOptions()
         {
             WorkerCount = Math.Min(Environment.ProcessorCount * 5, MaxDefaultWorkerCount);
-            Queues = new[] { EnqueuedState.DefaultQueue };
+            Queues = new[] {
+                new Queue(EnqueuedState.DefaultQueue, WorkerCount)
+            };
             ShutdownTimeout = BackgroundProcessingServer.DefaultShutdownTimeout;
             SchedulePollingInterval = DelayedJobScheduler.DefaultPollingDelay;
             HeartbeatInterval = ServerHeartbeat.DefaultHeartbeatInterval;
@@ -58,7 +60,7 @@ namespace Hangfire
             }
         }
 
-        public string[] Queues
+        public Queue[] Queues
         {
             get { return _queues; }
             set

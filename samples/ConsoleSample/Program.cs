@@ -23,7 +23,7 @@ namespace ConsoleSample
 
             var options = new BackgroundJobServerOptions
             {
-                Queues = new[] { "critical", "default" }
+                Queues = new Hangfire.Server.Queue[] { new Hangfire.Server.Queue("critical", -1), new Hangfire.Server.Queue("default", -1) }
             };
             
             using (new BackgroundJobServer(options))

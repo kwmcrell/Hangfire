@@ -18,7 +18,7 @@ namespace Hangfire.Core.Tests
         public void Ctor_CorrectlySets_AllPropertyValues()
         {
             var filter = new QueueAttribute("hello");
-            Assert.Equal("hello", filter.Queue);
+            Assert.Equal("hello", filter.Queue.Name);
         }
 
         [Fact]

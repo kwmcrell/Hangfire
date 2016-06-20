@@ -64,7 +64,7 @@ namespace Hangfire
         [Obsolete("Please use `IAppBuilder.UseHangfireServer` OWIN extension method instead. Will be removed in version 2.0.0.")]
         public static void UseServer(
             this IBootstrapperConfiguration configuration,
-            params string[] queues)
+            params Server.Queue[] queues)
         {
             var options = new BackgroundJobServerOptions
             {
@@ -87,7 +87,7 @@ namespace Hangfire
         public static void UseServer(
             this IBootstrapperConfiguration configuration,
             int workerCount,
-            params string[] queues)
+            params Server.Queue[] queues)
         {
             var options = new BackgroundJobServerOptions
             {

@@ -32,6 +32,9 @@ namespace Hangfire
 
         private readonly BackgroundJobServerOptions _options;
         private readonly IDisposable _processingServer;
+        private List<Worker> _workers = new List<Worker>();
+        private List<Queue> _queues = new List<Queue>();
+        private readonly JobStorage _storage;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BackgroundJobServer"/> class
@@ -82,7 +85,13 @@ namespace Hangfire
             if (options == null) throw new ArgumentNullException("options");
             if (additionalProcesses == null) throw new ArgumentNullException("additionalProcesses");
 
+            _storage = storage;
             _options = options;
+            _queues = _options.Queues.ToList();
+            foreach(var queue in _queues.Where(x => x.MaxWokers == -1))
+            {
+                queue.MaxWokers = _options.WorkerCount;
+            }
 
             var processes = new List<IBackgroundProcess>();
             processes.AddRange(GetRequiredProcesses());
@@ -90,7 +99,7 @@ namespace Hangfire
 
             var properties = new Dictionary<string, object>
             {
-                { "Queues", options.Queues },
+                { "Queues", _queues.Select(x => x.Name).ToArray() },
                 { "WorkerCount", options.WorkerCount }
             };
 
@@ -101,7 +110,7 @@ namespace Hangfire
 
             Logger.Info("Using the following options for Hangfire Server:");
             Logger.InfoFormat("    Worker count: {0}.", options.WorkerCount);
-            Logger.InfoFormat("    Listening queues: {0}.", String.Join(", ", options.Queues.Select(x => "'" + x + "'")));
+            Logger.InfoFormat("    Listening queues: {0}.", String.Join(", ", _queues.Select(x => "'" + x.Name + "'")));
             Logger.InfoFormat("    Shutdown timeout: {0}.", options.ShutdownTimeout);
             Logger.InfoFormat("    Schedule polling interval: {0}.", options.SchedulePollingInterval);
             
@@ -130,9 +139,14 @@ namespace Hangfire
             
             for (var i = 0; i < _options.WorkerCount; i++)
             {
-                processes.Add(new Worker(_options.Queues, performer, stateChanger));
+                var worker = new Worker(_queues.Select(x => x.Name), performer, stateChanger);
+
+                _queues.ForEach(x => x.AddWorker(worker.Id));
+
+                _workers.Add(worker);
             }
-            
+
+            processes.AddRange(_workers);
             processes.Add(new DelayedJobScheduler(_options.SchedulePollingInterval, stateChanger));
             processes.Add(new RecurringJobScheduler(factory));
 
@@ -162,6 +176,33 @@ namespace Hangfire
         [Obsolete("This method is a stub. Please call the `Dispose` method instead. Will be removed in version 2.0.0.")]
         public void Stop()
         {
+        }
+
+        public void AddQueue(Queue queue)
+        {
+            if(queue.MaxWokers > _options.WorkerCount)
+            {
+                queue = new Queue(queue.Name, _options.WorkerCount);
+            }
+
+            _queues.Add(queue);
+
+            foreach(var worker in _workers.OrderBy(x => x.QueueLength).Take(queue.MaxWokers))
+            {
+                worker.AddQueue(queue.Name);
+            }
+            
+            using (var connection = _storage.GetConnection())
+            {
+                var properties = new Dictionary<string, object>
+                {
+                    { "Queues", _queues.Select(x => x.Name).ToArray() },
+                    { "WorkerCount", _options.WorkerCount }
+                };
+
+                var serverContext = BackgroundProcessingServer.GetServerContext(properties);
+                connection.AnnounceServer((_processingServer as BackgroundProcessingServer).ServerId(), serverContext);
+            }
         }
     }
 }

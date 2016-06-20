@@ -44,7 +44,7 @@ namespace Hangfire.Server
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
         private readonly string _workerId;
-        private readonly string[] _queues;
+        private string[] _queues;
 
         private readonly IBackgroundJobPerformer _performer;
         private readonly IBackgroundJobStateChanger _stateChanger;
@@ -76,6 +76,7 @@ namespace Hangfire.Server
         /// <inheritdoc />
         public void Execute(BackgroundProcessContext context)
         {
+            //Check the context to see if the worker has been designated to be removed and readded
             if (context == null) throw new ArgumentNullException("context");
 
             using (var connection = context.Storage.GetConnection())
@@ -208,6 +209,30 @@ namespace Hangfire.Server
                 {
                     Reason = "An exception occurred during processing of a background job."
                 };
+            }
+        }
+
+        public void AddQueue(string newQueue)
+        {
+            List<string> tempList = new List<string>() { newQueue };
+            tempList.AddRange(_queues);
+
+            _queues = tempList.Distinct().ToArray();
+        }
+
+        public string Id
+        {
+            get
+            {
+                return _workerId;
+            }
+        }
+
+        public int QueueLength
+        {
+            get
+            {
+                return _queues.Length;
             }
         }
     }

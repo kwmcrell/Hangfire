@@ -23,6 +23,8 @@ namespace Hangfire.Server
 {
     public class BackgroundProcessContext
     {
+        private List<Guid> _workersToBeRestarted = new List<Guid>();
+
         public BackgroundProcessContext(
             [NotNull] string serverId,
             [NotNull] JobStorage storage, 
@@ -59,5 +61,8 @@ namespace Hangfire.Server
         {
             CancellationToken.WaitHandle.WaitOne(timeout);
         }
+
+        //Add a list that will contain a list workers that have been designated to be removed and readded.
+        //
     }
 }

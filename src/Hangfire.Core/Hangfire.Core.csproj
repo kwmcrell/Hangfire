@@ -99,6 +99,7 @@
     <Compile Include="Server\IBackgroundProcess.cs" />
     <Compile Include="Server\IBackgroundProcessWrapper.cs" />
     <Compile Include="Server\InfiniteLoopProcess.cs" />
+    <Compile Include="Server\Queue.cs" />
     <Compile Include="Server\ServerProcessExtensions.cs" />
     <Compile Include="Server\BackgroundProcessingServer.cs" />
     <Compile Include="MoreLinq\MoreEnumerable.Pairwise.cs" />

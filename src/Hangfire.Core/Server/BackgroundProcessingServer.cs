@@ -49,6 +49,8 @@ namespace Hangfire.Server
 
         private readonly BackgroundProcessingServerOptions _options;
         private readonly Task _bootstrapTask;
+        private Task[] _tasks;
+        private readonly BackgroundProcessContext _context;
 
         public BackgroundProcessingServer([NotNull] IEnumerable<IBackgroundProcess> processes)
             : this(JobStorage.Current, processes)
@@ -102,13 +104,13 @@ namespace Hangfire.Server
             _processes.AddRange(storage.GetComponents());
             _processes.AddRange(processes);
 
-            var context = new BackgroundProcessContext(
+            _context = new BackgroundProcessContext(
                 GetGloballyUniqueServerId(), 
                 storage,
                 properties,
                 _cts.Token);
 
-            _bootstrapTask = WrapProcess(this).CreateTask(context);
+            _bootstrapTask = WrapProcess(this).CreateTask(_context);
         }
 
         public void Dispose()
@@ -136,12 +138,12 @@ namespace Hangfire.Server
 
             try
             {
-                var tasks = _processes
+                _tasks = _processes
                     .Select(WrapProcess)
                     .Select(process => process.CreateTask(context))
                     .ToArray();
 
-                Task.WaitAll(tasks);
+                Task.WaitAll(_tasks);
             }
             finally
             {
@@ -172,7 +174,12 @@ namespace Hangfire.Server
                 Guid.NewGuid());
         }
 
-        private static ServerContext GetServerContext(IReadOnlyDictionary<string, object> properties)
+        public string ServerId()
+        {
+            return _context.ServerId;
+        }
+
+        public static ServerContext GetServerContext(IReadOnlyDictionary<string, object> properties)
         {
             var serverContext = new ServerContext();
 

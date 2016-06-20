@@ -53,21 +53,32 @@ namespace Hangfire
         /// </summary>
         /// <param name="queue">Queue name.</param>
         public QueueAttribute(string queue)
+            :this(queue, -1)
         {
-            Queue = queue;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueueAttribute"/> class
+        /// using the specified queue name.
+        /// </summary>
+        /// <param name="queue">Queue name.</param>
+        /// <param name="maxWorkers">Max number of workers this queue can use</param>
+        public QueueAttribute(string queue, int maxWorkers)
+        {
+            Queue = new Server.Queue(queue, maxWorkers);
         }
 
         /// <summary>
         /// Gets the queue name that will be used for background jobs.
         /// </summary>
-        public string Queue { get; private set; }
+        public Server.Queue Queue { get; private set; }
 
         public void OnStateElection(ElectStateContext context)
         {
             var enqueuedState = context.CandidateState as EnqueuedState;
             if (enqueuedState != null)
             {
-                enqueuedState.Queue = Queue;
+                enqueuedState.Queue = Queue.Name;
             }
         }
     }
