@@ -139,7 +139,7 @@ namespace Hangfire
             
             for (var i = 0; i < _options.WorkerCount; i++)
             {
-                var worker = new Worker(_queues.Select(x => x.Name), performer, stateChanger);
+                var worker = new Worker(_queues.Where(x => !x.HasMaxWorkers()).Select(x => x.Name), performer, stateChanger);
 
                 _queues.ForEach(x => x.AddWorker(worker.Id));
 
