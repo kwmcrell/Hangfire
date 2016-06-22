@@ -41,7 +41,7 @@ namespace Hangfire.Server
 
         public bool HasMaxWorkers()
         {
-            return _workerIds.Count >= _workerIds.Count;
+            return _workerIds.Count >= MaxWokers;
         }
 
         private void ValidateName(string parameterName, string value)
