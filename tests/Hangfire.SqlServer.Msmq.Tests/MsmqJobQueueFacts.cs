@@ -5,6 +5,7 @@ using System.Threading;
 using Hangfire.Msmq.Tests;
 using Moq;
 using Xunit;
+using System.Collections.Generic;
 
 namespace Hangfire.SqlServer.Msmq.Tests
 {
@@ -59,7 +60,7 @@ namespace Hangfire.SqlServer.Msmq.Tests
             MsmqUtils.EnqueueJobId("my-queue", "job-id");
             var queue = CreateQueue(MsmqTransactionType.Internal);
 
-            var fetchedJob = queue.Dequeue(new[] { "my-queue" }, _token);
+            var fetchedJob = queue.Dequeue(new List<string> { "my-queue" }, _token);
 
             Assert.Equal("job-id", fetchedJob.JobId);
         }
@@ -71,7 +72,7 @@ namespace Hangfire.SqlServer.Msmq.Tests
             var token = new CancellationToken(true);
 
             Assert.Throws<OperationCanceledException>(
-                () => queue.Dequeue(new[] { "my-queue" }, token));
+                () => queue.Dequeue(new List<string> { "my-queue" }, token));
         }
 
         [Fact, CleanMsmqQueue("queue-1", "queue-2")]
@@ -80,7 +81,7 @@ namespace Hangfire.SqlServer.Msmq.Tests
             MsmqUtils.EnqueueJobId("queue-2", "job-id");
             var queue = CreateQueue(MsmqTransactionType.Internal);
 
-            var fetchedJob = queue.Dequeue(new[] { "queue-1", "queue-2" }, _token);
+            var fetchedJob = queue.Dequeue(new List<string> { "queue-1", "queue-2" }, _token);
 
             Assert.Equal("job-id", fetchedJob.JobId);
         }
@@ -93,7 +94,7 @@ namespace Hangfire.SqlServer.Msmq.Tests
             var queue = CreateQueue(MsmqTransactionType.Internal);
 
             // Act
-            var fetchedJob = queue.Dequeue(new[] { "my-queue" }, _token);
+            var fetchedJob = queue.Dequeue(new List<string> { "my-queue" }, _token);
 
             // Assert
             Assert.NotNull(fetchedJob);
@@ -112,7 +113,7 @@ namespace Hangfire.SqlServer.Msmq.Tests
             var queue = CreateQueue(MsmqTransactionType.Internal);
 
             // Act
-            using (var fetchedJob = queue.Dequeue(new[] { "my-queue" }, _token))
+            using (var fetchedJob = queue.Dequeue(new List<string> { "my-queue" }, _token))
             {
                 fetchedJob.RemoveFromQueue();
             }
@@ -132,7 +133,7 @@ namespace Hangfire.SqlServer.Msmq.Tests
             var queue = CreateQueue(MsmqTransactionType.Internal);
 
             // Act
-            var fetchedJob = queue.Dequeue(new[] { "my-queue" }, _token);
+            var fetchedJob = queue.Dequeue(new List<string> { "my-queue" }, _token);
             fetchedJob.Dispose();
 
             // Assert

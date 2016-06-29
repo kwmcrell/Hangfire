@@ -5,12 +5,13 @@ using System.Linq;
 using System.Threading;
 using Dapper;
 using Xunit;
+using System.Collections.Generic;
 
 namespace Hangfire.SqlServer.Tests
 {
     public class SqlServerJobQueueFacts
     {
-        private static readonly string[] DefaultQueues = { "default" };
+        private static readonly List<string> DefaultQueues = new List<string> { "default" };
 
         [Fact]
         public void Ctor_ThrowsAnException_WhenStorageIsNull()
@@ -52,7 +53,7 @@ namespace Hangfire.SqlServer.Tests
                 var queue = CreateJobQueue(connection);
 
                 var exception = Assert.Throws<ArgumentException>(
-                    () => queue.Dequeue(new string[0], CreateTimingOutCancellationToken()));
+                    () => queue.Dequeue(new List<string>(), CreateTimingOutCancellationToken()));
 
                 Assert.Equal("queues", exception.ParamName);
             });
@@ -256,14 +257,14 @@ values (scope_identity(), @queue)";
                 var queue = CreateJobQueue(connection);
 
                 var critical = (SqlServerFetchedJob)queue.Dequeue(
-                    new[] { "critical", "default" },
+                    new List<string> { "critical", "default" },
                     CreateTimingOutCancellationToken());
 
                 Assert.NotNull(critical.JobId);
                 Assert.Equal("critical", critical.Queue);
 
                 var @default = (SqlServerFetchedJob)queue.Dequeue(
-                    new[] { "critical", "default" },
+                    new List<string> { "critical", "default" },
                     CreateTimingOutCancellationToken());
 
                 Assert.NotNull(@default.JobId);

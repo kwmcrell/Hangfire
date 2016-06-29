@@ -44,7 +44,7 @@ namespace Hangfire.Server
         private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
         private readonly string _workerId;
-        private string[] _queues;
+        private List<string> _queues;
 
         private readonly IBackgroundJobPerformer _performer;
         private readonly IBackgroundJobStateChanger _stateChanger;
@@ -67,7 +67,7 @@ namespace Hangfire.Server
             if (performer == null) throw new ArgumentNullException("performer");
             if (stateChanger == null) throw new ArgumentNullException("stateChanger");
             
-            _queues = queues.ToArray();
+            _queues = queues.ToList();
             _performer = performer;
             _stateChanger = stateChanger;
             _workerId = Guid.NewGuid().ToString();
@@ -214,10 +214,7 @@ namespace Hangfire.Server
 
         public void AddQueue(string newQueue)
         {
-            List<string> tempList = new List<string>() { newQueue };
-            tempList.AddRange(_queues);
-
-            _queues = tempList.Distinct().ToArray();
+            _queues.Add(newQueue);
         }
 
         public string Id
@@ -232,7 +229,7 @@ namespace Hangfire.Server
         {
             get
             {
-                return _queues.Length;
+                return _queues.Count;
             }
         }
     }

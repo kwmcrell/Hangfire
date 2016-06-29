@@ -35,6 +35,7 @@ namespace Hangfire
         private List<Worker> _workers = new List<Worker>();
         private List<Queue> _queues = new List<Queue>();
         private readonly JobStorage _storage;
+        private Object queueLock = new Object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BackgroundJobServer"/> class
@@ -88,7 +89,7 @@ namespace Hangfire
             _storage = storage;
             _options = options;
             _queues = _options.Queues.ToList();
-            foreach(var queue in _queues.Where(x => x.MaxWokers == -1))
+            foreach (var queue in _queues.Where(x => x.MaxWokers == -1))
             {
                 queue.MaxWokers = _options.WorkerCount;
             }
@@ -113,11 +114,11 @@ namespace Hangfire
             Logger.InfoFormat("    Listening queues: {0}.", String.Join(", ", _queues.Select(x => "'" + x.Name + "'")));
             Logger.InfoFormat("    Shutdown timeout: {0}.", options.ShutdownTimeout);
             Logger.InfoFormat("    Schedule polling interval: {0}.", options.SchedulePollingInterval);
-            
+
             _processingServer = new BackgroundProcessingServer(
-                storage, 
-                processes, 
-                properties, 
+                storage,
+                processes,
+                properties,
                 GetProcessingServerOptions());
         }
 
@@ -136,7 +137,7 @@ namespace Hangfire
             var factory = new BackgroundJobFactory(filterProvider);
             var performer = new BackgroundJobPerformer(filterProvider, _options.Activator ?? JobActivator.Current);
             var stateChanger = new BackgroundJobStateChanger(filterProvider);
-            
+
             for (var i = 0; i < _options.WorkerCount; i++)
             {
                 var worker = new Worker(_queues.Where(x => !x.HasMaxWorkers()).Select(x => x.Name), performer, stateChanger);
@@ -180,28 +181,34 @@ namespace Hangfire
 
         public void AddQueue(Queue queue)
         {
-            if(queue.MaxWokers > _options.WorkerCount)
+            lock (queueLock)
             {
-                queue = new Queue(queue.Name, _options.WorkerCount);
-            }
-
-            _queues.Add(queue);
-
-            foreach(var worker in _workers.OrderBy(x => x.QueueLength).Take(queue.MaxWokers))
-            {
-                worker.AddQueue(queue.Name);
-            }
-            
-            using (var connection = _storage.GetConnection())
-            {
-                var properties = new Dictionary<string, object>
+                if (_queues.Count(x => x.Name == queue.Name) == 0)
                 {
-                    { "Queues", _queues.Select(x => x.Name).ToArray() },
-                    { "WorkerCount", _options.WorkerCount }
-                };
+                    if (queue.MaxWokers > _options.WorkerCount)
+                    {
+                        queue = new Queue(queue.Name, _options.WorkerCount);
+                    }
 
-                var serverContext = BackgroundProcessingServer.GetServerContext(properties);
-                connection.AnnounceServer((_processingServer as BackgroundProcessingServer).ServerId(), serverContext);
+                    _queues.Add(queue);
+
+                    foreach (var worker in _workers.OrderBy(x => x.QueueLength).Take(queue.MaxWokers))
+                    {
+                        worker.AddQueue(queue.Name);
+                    }
+
+                    using (var connection = _storage.GetConnection())
+                    {
+                        var properties = new Dictionary<string, object>
+                    {
+                        { "Queues", _queues.Select(x => x.Name).ToArray() },
+                        { "WorkerCount", _options.WorkerCount }
+                    };
+
+                        var serverContext = BackgroundProcessingServer.GetServerContext(properties);
+                        connection.AnnounceServer((_processingServer as BackgroundProcessingServer).ServerId(), serverContext);
+                    }
+                }
             }
         }
     }

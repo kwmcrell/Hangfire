@@ -50,9 +50,9 @@ namespace Hangfire.SqlServer
                 timeout);
         }
 
-        public override IFetchedJob FetchNextJob(string[] queues, CancellationToken cancellationToken)
+        public override IFetchedJob FetchNextJob(List<string> queues, CancellationToken cancellationToken)
         {
-            if (queues == null || queues.Length == 0) throw new ArgumentNullException("queues");
+            if (queues == null || queues.Count == 0) throw new ArgumentNullException("queues");
 
             var providers = queues
                 .Select(queue => _storage.QueueProviders.GetProvider(queue))

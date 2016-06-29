@@ -4,6 +4,7 @@ using System.Threading;
 using Hangfire.SqlServer.RabbitMQ;
 using Moq;
 using Xunit;
+using System.Collections.Generic;
 
 namespace Hangfire.SqlServer.RabbitMq.Tests
 {
@@ -44,7 +45,7 @@ namespace Hangfire.SqlServer.RabbitMq.Tests
                 queue.Enqueue(new Mock<IDbConnection>().Object, "my-queue", "job-id");
 
                 // Assert
-                var fetchedJob = queue.Dequeue(new[] { "my-queue" }, _token);
+                var fetchedJob = queue.Dequeue(new List<string> { "my-queue" }, _token);
                 fetchedJob.RemoveFromQueue();
 
                 var body = fetchedJob.JobId;
@@ -60,7 +61,7 @@ namespace Hangfire.SqlServer.RabbitMq.Tests
 
             using (var queue = CleanRabbitMqQueueAttribute.GetMessageQueue("my-queue"))
             {
-                var fetchedJob = queue.Dequeue(new[] { "my-queue" }, _token);
+                var fetchedJob = queue.Dequeue(new List<string> { "my-queue" }, _token);
                 fetchedJob.RemoveFromQueue();
 
                 Assert.Equal("job-id", fetchedJob.JobId);
@@ -75,7 +76,7 @@ namespace Hangfire.SqlServer.RabbitMq.Tests
                 var token = new CancellationToken(true);
 
                 Assert.Throws<OperationCanceledException>(
-                    () => queue.Dequeue(new[] {"my-queue"}, token));
+                    () => queue.Dequeue(new List<string> { "my-queue"}, token));
             }
         }
 
@@ -85,7 +86,7 @@ namespace Hangfire.SqlServer.RabbitMq.Tests
             RabbitMqUtils.EnqueueJobId("queue-2", "job-id");
             using (var queue = CleanRabbitMqQueueAttribute.GetMessageQueue("queue-1", "queue-2"))
             {
-                var fetchedJob = queue.Dequeue(new[] {"queue-1", "queue-2"}, _token);
+                var fetchedJob = queue.Dequeue(new List<string> { "queue-1", "queue-2"}, _token);
 
                 Assert.Equal("job-id", fetchedJob.JobId);
             }
@@ -100,7 +101,7 @@ namespace Hangfire.SqlServer.RabbitMq.Tests
             using (var queue = CleanRabbitMqQueueAttribute.GetMessageQueue("my-queue"))
             {
                 // Act
-                var fetchedJob = queue.Dequeue(new[] {"my-queue"}, _token);
+                var fetchedJob = queue.Dequeue(new List<string> { "my-queue"}, _token);
 
                 // Assert
                 Assert.NotNull(fetchedJob);
@@ -120,7 +121,7 @@ namespace Hangfire.SqlServer.RabbitMq.Tests
             using (var queue = CleanRabbitMqQueueAttribute.GetMessageQueue("my-queue"))
             {
                 // Act
-                using (var fetchedJob = queue.Dequeue(new[] {"my-queue"}, _token))
+                using (var fetchedJob = queue.Dequeue(new List<string> { "my-queue"}, _token))
                 {
                     fetchedJob.RemoveFromQueue();
                 }
@@ -142,7 +143,7 @@ namespace Hangfire.SqlServer.RabbitMq.Tests
             using (var queue = CleanRabbitMqQueueAttribute.GetMessageQueue("my-queue"))
             {
                 // Act
-                var fetchedJob = queue.Dequeue(new[] {"my-queue"}, _token);
+                var fetchedJob = queue.Dequeue(new List<string> { "my-queue"}, _token);
                 fetchedJob.Dispose();
 
                 // Assert
@@ -160,11 +161,11 @@ namespace Hangfire.SqlServer.RabbitMq.Tests
             using (var queue = CleanRabbitMqQueueAttribute.GetMessageQueue("my-queue"))
             {
                 // Act
-                var fetchedJob = queue.Dequeue(new[] { "my-queue" }, _token);
+                var fetchedJob = queue.Dequeue(new List<string> { "my-queue" }, _token);
                 fetchedJob.Dispose();
 
                 // Assert
-                var newFetchedJob = queue.Dequeue(new[] { "my-queue" }, _token);
+                var newFetchedJob = queue.Dequeue(new List<string> { "my-queue" }, _token);
 
                 Assert.Equal("job-id", newFetchedJob.JobId);
             }

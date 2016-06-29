@@ -17,12 +17,13 @@
 using System.Data;
 using System.Threading;
 using Hangfire.Storage;
+using System.Collections.Generic;
 
 namespace Hangfire.SqlServer
 {
     public interface IPersistentJobQueue
     {
-        IFetchedJob Dequeue(string[] queues, CancellationToken cancellationToken);
+        IFetchedJob Dequeue(List<string> queues, CancellationToken cancellationToken);
         void Enqueue(IDbConnection connection, string queue, string jobId);
     }
 }

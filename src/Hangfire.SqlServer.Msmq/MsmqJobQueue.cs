@@ -19,6 +19,7 @@ using System.Data;
 using System.Messaging;
 using System.Threading;
 using Hangfire.Storage;
+using System.Collections.Generic;
 
 namespace Hangfire.SqlServer.Msmq
 {
@@ -41,7 +42,7 @@ namespace Hangfire.SqlServer.Msmq
                 () => new BinaryMessageFormatter());
         }
 
-        public IFetchedJob Dequeue(string[] queues, CancellationToken cancellationToken)
+        public IFetchedJob Dequeue(List<string> queues, CancellationToken cancellationToken)
         {
             string jobId = null;
             IMsmqTransaction transaction;
@@ -59,7 +60,7 @@ namespace Hangfire.SqlServer.Msmq
                 {
                     try
                     {
-                        var message = queueIndex == queues.Length - 1
+                        var message = queueIndex == queues.Count - 1
                             ? transaction.Receive(messageQueue, SyncReceiveTimeout)
                             : transaction.Receive(messageQueue, new TimeSpan(1));
 
@@ -79,7 +80,7 @@ namespace Hangfire.SqlServer.Msmq
                     }
                 }
 
-                queueIndex = (queueIndex + 1) % queues.Length;
+                queueIndex = (queueIndex + 1) % queues.Count;
             } while (jobId == null);
 
             return new MsmqFetchedJob(transaction, jobId);

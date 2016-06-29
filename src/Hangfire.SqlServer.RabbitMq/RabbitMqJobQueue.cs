@@ -41,14 +41,14 @@ namespace Hangfire.SqlServer.RabbitMQ
             }
         }
 
-        public IFetchedJob Dequeue(string[] queues, CancellationToken cancellationToken)
+        public IFetchedJob Dequeue(List<string> queues, CancellationToken cancellationToken)
         {
             BasicDeliverEventArgs message;
             var queueIndex = 0;
 
             do
             {
-                queueIndex = (queueIndex + 1) % queues.Length;
+                queueIndex = (queueIndex + 1) % queues.Count;
                 var queueName = queues[queueIndex];
 
                 cancellationToken.ThrowIfCancellationRequested();

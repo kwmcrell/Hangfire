@@ -8,6 +8,7 @@ using Hangfire.Storage;
 using Moq;
 using Moq.Sequences;
 using Xunit;
+using System.Collections.Generic;
 
 namespace Hangfire.Core.Tests.Server
 {
@@ -15,7 +16,7 @@ namespace Hangfire.Core.Tests.Server
     {
         private const string JobId = "my-job";
 
-        private readonly string[] _queues;
+        private readonly List<string> _queues;
         private readonly Mock<IStorageConnection> _connection;
         private readonly Mock<IBackgroundJobStateChanger> _stateChanger;
         private readonly Mock<IFetchedJob> _fetchedJob;
@@ -25,7 +26,7 @@ namespace Hangfire.Core.Tests.Server
         public WorkerFacts()
         {
             _context = new BackgroundProcessContextMock();
-            _queues = new[] {"critical"};
+            _queues = new List<string> {"critical"};
             _performer = new Mock<IBackgroundJobPerformer>();
 
             _connection = new Mock<IStorageConnection>();

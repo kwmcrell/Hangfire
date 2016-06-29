@@ -23,6 +23,7 @@ using System.Threading;
 using Dapper;
 using Hangfire.Annotations;
 using Hangfire.Storage;
+using System.Collections.Generic;
 
 namespace Hangfire.SqlServer
 {
@@ -40,11 +41,12 @@ namespace Hangfire.SqlServer
             _options = options;
         }
 
+        //HERE is where it is just looping waiting for a job to be inserted for a specific queue!!!!!!!!!!!!!!!!!
         [NotNull]
-        public IFetchedJob Dequeue(string[] queues, CancellationToken cancellationToken)
+        public IFetchedJob Dequeue(List<string> queues, CancellationToken cancellationToken)
         {
             if (queues == null) throw new ArgumentNullException("queues");
-            if (queues.Length == 0) throw new ArgumentException("Queue array must be non-empty.", "queues");
+            if (queues.Count == 0) throw new ArgumentException("Queue array must be non-empty.", "queues");
 
             FetchedJob fetchedJob = null;
             SqlConnection connection = null;

@@ -44,7 +44,7 @@ namespace Hangfire.SqlServer.Tests
             UseConnection(connection =>
             {
                 var token = new CancellationToken();
-                var queues = new[] { "default" };
+                var queues = new List<string> { "default" };
 
                 connection.FetchNextJob(queues, token);
 
@@ -59,10 +59,10 @@ namespace Hangfire.SqlServer.Tests
             {
                 var token = new CancellationToken();
                 var anotherProvider = new Mock<IPersistentJobQueueProvider>();
-                _providers.Add(anotherProvider.Object, new [] { "critical" });
+                _providers.Add(anotherProvider.Object, new List<string> { "critical" });
 
                 Assert.Throws<InvalidOperationException>(
-                    () => connection.FetchNextJob(new[] { "critical", "default" }, token));
+                    () => connection.FetchNextJob(new List<string> { "critical", "default" }, token));
             });
         }
 
